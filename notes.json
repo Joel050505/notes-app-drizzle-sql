@@ -1,0 +1,14 @@
+[
+  {
+    "id": 2,
+    "title": "hello",
+    "body": "jag ska baka",
+    "favorite": false
+  },
+  {
+    "id": 3,
+    "title": "hey",
+    "body": "w",
+    "favorite": false
+  }
+]
