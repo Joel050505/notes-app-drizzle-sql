@@ -1,95 +1,45 @@
-import fs from "fs/promises";
-import path from "path";
+import { eq, desc } from "drizzle-orm";
+import { notes } from "../../db/schema";
+import { db } from "../../db/db";
 
-const filePath = path.resolve("notes.json");
+// Rena Drizzle-funktioner (ingen TanStack Start här)
 
-export type Note = {
-  id: number;
+export async function readNotes() {
+  return await db.select().from(notes).orderBy(desc(notes.createdAt));
+} // desc för att sortera nyaste först, drizzle-orm inbyggd funktion
+
+export async function getNoteById(id: number) {
+  const result = await db.select().from(notes).where(eq(notes.id, id));
+  return result[0];
+}
+
+export async function createNote({
+  title,
+  content,
+}: {
   title: string;
-  body?: string;
-  favorite: boolean;
-};
-
-export async function readNotes(): Promise<Note[]> {
-  try {
-    const data = await fs.readFile(filePath, "utf-8");
-    return JSON.parse(data);
-  } catch {
-    const initial: Note[] = [];
-    await writeNotes(initial);
-    return initial;
-  }
+  content?: string;
+}) {
+  const result = await db
+    .insert(notes)
+    .values({ title, content: content || "" })
+    .$returningId();
+  const newNote = await db
+    .select()
+    .from(notes)
+    .where(eq(notes.id, result[0].id));
+  return newNote[0];
 }
 
-export async function writeNotes(notes: Note[]) {
-  await fs.writeFile(filePath, JSON.stringify(notes, null, 2), "utf-8");
+export async function updateNote(
+  id: number,
+  updates: { title?: string; content?: string }
+) {
+  await db.update(notes).set(updates).where(eq(notes.id, id));
+  const updatedNote = await db.select().from(notes).where(eq(notes.id, id));
+  return updatedNote[0];
 }
 
-export async function POST({ request }: { request: Request }) {
-  const newNote = await request.json();
-  const notes = await readNotes();
-
-  // In case the ID already exists, generate a new one
-  if (notes.some((note) => note.id === newNote.id)) {
-    newNote.id =
-      notes.length > 0 ? Math.max(...notes.map((note) => note.id)) + 1 : 1;
-  }
-
-  notes.push(newNote);
-  await writeNotes(notes);
-
-  return new Response(JSON.stringify(newNote), {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    status: 201,
-  });
-}
-
-export async function GET() {
-  const notes = await readNotes();
-
-  return new Response(JSON.stringify(notes), {
-    headers: {
-      "Content-Type": "application/json",
-    },
-  });
-}
-
-export async function DELETE(request: Request) {
-  const url = new URL(request.url);
-  const idParam = url.searchParams.get("id");
-
-  if (!idParam) {
-    return new Response(JSON.stringify({ error: "Note ID is required" }), {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      status: 400,
-    });
-  }
-
-  const id = parseInt(idParam, 10);
-  const notes = await readNotes();
-  const noteIndex = notes.findIndex((note) => note.id === id);
-
-  if (noteIndex === -1) {
-    return new Response(JSON.stringify({ error: "Note not found" }), {
-      headers: {
-        "Content-Type": "application/json",
-      },
-      status: 404,
-    });
-  }
-
-  // Remove the note
-  const [deletedNote] = notes.splice(noteIndex, 1);
-  await writeNotes(notes);
-
-  return new Response(JSON.stringify(deletedNote), {
-    headers: {
-      "Content-Type": "application/json",
-    },
-    status: 200,
-  });
+export async function removeNote(id: number) {
+  await db.delete(notes).where(eq(notes.id, id));
 }

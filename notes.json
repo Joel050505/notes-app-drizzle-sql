@@ -10,5 +10,11 @@
     "title": "hey",
     "body": "w",
     "favorite": false
+  },
+  {
+    "id": 4,
+    "title": "hej",
+    "body": "blabla",
+    "favorite": false
   }
 ]

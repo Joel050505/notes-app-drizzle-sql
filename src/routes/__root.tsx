@@ -81,61 +81,78 @@ function RootDocument({ children }: { children: React.ReactNode }) {
       <head>
         <HeadContent />
       </head>
-      <body>
-        <div className="p-2 flex gap-2 text-lg">
-          <Link
-            to="/"
-            activeProps={{
-              className: "font-bold",
-            }}
-            activeOptions={{ exact: true }}
-          >
-            Home
-          </Link>{" "}
-          <Link
-            to="/posts"
-            activeProps={{
-              className: "font-bold",
-            }}
-          >
-            Posts
-          </Link>{" "}
-          <Link
-            to="/users"
-            activeProps={{
-              className: "font-bold",
-            }}
-          >
-            Users
-          </Link>{" "}
-          <Link
-            to="/route-a"
-            activeProps={{
-              className: "font-bold",
-            }}
-          >
-            Pathless Layout
-          </Link>{" "}
-          <Link
-            to="/deferred"
-            activeProps={{
-              className: "font-bold",
-            }}
-          >
-            Deferred
-          </Link>{" "}
-          <Link
-            // @ts-expect-error
-            to="/this-route-does-not-exist"
-            activeProps={{
-              className: "font-bold",
-            }}
-          >
-            This Route Does Not Exist
-          </Link>
-          <Link to="/notes">Notes</Link>
-        </div>
-        <hr />
+      <body className="bg-gray-50">
+        <nav className="bg-white shadow-md border-b border-gray-200">
+          <div className="container mx-auto px-4">
+            <div className="flex gap-6 py-4 text-base items-center">
+              <Link
+                to="/"
+                activeProps={{
+                  className: "font-bold text-indigo-600",
+                }}
+                activeOptions={{ exact: true }}
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                🏠 Home
+              </Link>
+              <Link
+                to="/posts"
+                activeProps={{
+                  className: "font-bold text-indigo-600",
+                }}
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                📄 Posts
+              </Link>
+              <Link
+                to="/users"
+                activeProps={{
+                  className: "font-bold text-indigo-600",
+                }}
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                👥 Users
+              </Link>
+              <Link
+                to="/route-a"
+                activeProps={{
+                  className: "font-bold text-indigo-600",
+                }}
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                🔀 Pathless Layout
+              </Link>
+              <Link
+                to="/deferred"
+                activeProps={{
+                  className: "font-bold text-indigo-600",
+                }}
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                ⏱️ Deferred
+              </Link>
+              <Link
+                // @ts-expect-error
+                to="/this-route-does-not-exist"
+                activeProps={{
+                  className: "font-bold text-indigo-600",
+                }}
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                🚫 404
+              </Link>
+              <Link
+                to="/notes"
+                activeProps={{
+                  className: "font-bold text-indigo-600",
+                }}
+                className="text-gray-600 hover:text-indigo-600 transition-colors"
+              >
+                📝 Notes
+              </Link>
+            </div>
+          </div>
+        </nav>
         {children}
         <TanStackRouterDevtools position="bottom-right" />
         <ReactQueryDevtools buttonPosition="bottom-left" />

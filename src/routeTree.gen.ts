@@ -11,7 +11,6 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RedirectRouteImport } from './routes/redirect'
 import { Route as NotesRouteImport } from './routes/notes'
-import { Route as NoteRouteImport } from './routes/note'
 import { Route as DeferredRouteImport } from './routes/deferred'
 import { Route as PathlessLayoutRouteImport } from './routes/_pathlessLayout'
 import { Route as UsersRouteRouteImport } from './routes/users.route'
@@ -21,7 +20,7 @@ import { Route as UsersIndexRouteImport } from './routes/users.index'
 import { Route as PostsIndexRouteImport } from './routes/posts.index'
 import { Route as UsersUserIdRouteImport } from './routes/users.$userId'
 import { Route as PostsPostIdRouteImport } from './routes/posts.$postId'
-import { Route as NotesNoteIdRouteImport } from './routes/notes.$noteId'
+import { Route as NotesIdRouteImport } from './routes/notes_.$id'
 import { Route as ApiUsersRouteImport } from './routes/api/users'
 import { Route as PathlessLayoutNestedLayoutRouteImport } from './routes/_pathlessLayout/_nested-layout'
 import { Route as PostsPostIdDeepRouteImport } from './routes/posts_.$postId.deep'
@@ -37,11 +36,6 @@ const RedirectRoute = RedirectRouteImport.update({
 const NotesRoute = NotesRouteImport.update({
   id: '/notes',
   path: '/notes',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const NoteRoute = NoteRouteImport.update({
-  id: '/note',
-  path: '/note',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DeferredRoute = DeferredRouteImport.update({
@@ -88,10 +82,10 @@ const PostsPostIdRoute = PostsPostIdRouteImport.update({
   path: '/$postId',
   getParentRoute: () => PostsRouteRoute,
 } as any)
-const NotesNoteIdRoute = NotesNoteIdRouteImport.update({
-  id: '/$noteId',
-  path: '/$noteId',
-  getParentRoute: () => NotesRoute,
+const NotesIdRoute = NotesIdRouteImport.update({
+  id: '/notes_/$id',
+  path: '/notes/$id',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiUsersRoute = ApiUsersRouteImport.update({
   id: '/api/users',
@@ -131,11 +125,10 @@ export interface FileRoutesByFullPath {
   '/posts': typeof PostsRouteRouteWithChildren
   '/users': typeof UsersRouteRouteWithChildren
   '/deferred': typeof DeferredRoute
-  '/note': typeof NoteRoute
-  '/notes': typeof NotesRouteWithChildren
+  '/notes': typeof NotesRoute
   '/redirect': typeof RedirectRoute
   '/api/users': typeof ApiUsersRouteWithChildren
-  '/notes/$noteId': typeof NotesNoteIdRoute
+  '/notes/$id': typeof NotesIdRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/users/$userId': typeof UsersUserIdRoute
   '/posts/': typeof PostsIndexRoute
@@ -148,11 +141,10 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/deferred': typeof DeferredRoute
-  '/note': typeof NoteRoute
-  '/notes': typeof NotesRouteWithChildren
+  '/notes': typeof NotesRoute
   '/redirect': typeof RedirectRoute
   '/api/users': typeof ApiUsersRouteWithChildren
-  '/notes/$noteId': typeof NotesNoteIdRoute
+  '/notes/$id': typeof NotesIdRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/users/$userId': typeof UsersUserIdRoute
   '/posts': typeof PostsIndexRoute
@@ -169,12 +161,11 @@ export interface FileRoutesById {
   '/users': typeof UsersRouteRouteWithChildren
   '/_pathlessLayout': typeof PathlessLayoutRouteWithChildren
   '/deferred': typeof DeferredRoute
-  '/note': typeof NoteRoute
-  '/notes': typeof NotesRouteWithChildren
+  '/notes': typeof NotesRoute
   '/redirect': typeof RedirectRoute
   '/_pathlessLayout/_nested-layout': typeof PathlessLayoutNestedLayoutRouteWithChildren
   '/api/users': typeof ApiUsersRouteWithChildren
-  '/notes/$noteId': typeof NotesNoteIdRoute
+  '/notes_/$id': typeof NotesIdRoute
   '/posts/$postId': typeof PostsPostIdRoute
   '/users/$userId': typeof UsersUserIdRoute
   '/posts/': typeof PostsIndexRoute
@@ -191,11 +182,10 @@ export interface FileRouteTypes {
     | '/posts'
     | '/users'
     | '/deferred'
-    | '/note'
     | '/notes'
     | '/redirect'
     | '/api/users'
-    | '/notes/$noteId'
+    | '/notes/$id'
     | '/posts/$postId'
     | '/users/$userId'
     | '/posts/'
@@ -208,11 +198,10 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/deferred'
-    | '/note'
     | '/notes'
     | '/redirect'
     | '/api/users'
-    | '/notes/$noteId'
+    | '/notes/$id'
     | '/posts/$postId'
     | '/users/$userId'
     | '/posts'
@@ -228,12 +217,11 @@ export interface FileRouteTypes {
     | '/users'
     | '/_pathlessLayout'
     | '/deferred'
-    | '/note'
     | '/notes'
     | '/redirect'
     | '/_pathlessLayout/_nested-layout'
     | '/api/users'
-    | '/notes/$noteId'
+    | '/notes_/$id'
     | '/posts/$postId'
     | '/users/$userId'
     | '/posts/'
@@ -250,10 +238,10 @@ export interface RootRouteChildren {
   UsersRouteRoute: typeof UsersRouteRouteWithChildren
   PathlessLayoutRoute: typeof PathlessLayoutRouteWithChildren
   DeferredRoute: typeof DeferredRoute
-  NoteRoute: typeof NoteRoute
-  NotesRoute: typeof NotesRouteWithChildren
+  NotesRoute: typeof NotesRoute
   RedirectRoute: typeof RedirectRoute
   ApiUsersRoute: typeof ApiUsersRouteWithChildren
+  NotesIdRoute: typeof NotesIdRoute
   PostsPostIdDeepRoute: typeof PostsPostIdDeepRoute
 }
 
@@ -271,13 +259,6 @@ declare module '@tanstack/react-router' {
       path: '/notes'
       fullPath: '/notes'
       preLoaderRoute: typeof NotesRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/note': {
-      id: '/note'
-      path: '/note'
-      fullPath: '/note'
-      preLoaderRoute: typeof NoteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/deferred': {
@@ -343,12 +324,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PostsPostIdRouteImport
       parentRoute: typeof PostsRouteRoute
     }
-    '/notes/$noteId': {
-      id: '/notes/$noteId'
-      path: '/$noteId'
-      fullPath: '/notes/$noteId'
-      preLoaderRoute: typeof NotesNoteIdRouteImport
-      parentRoute: typeof NotesRoute
+    '/notes_/$id': {
+      id: '/notes_/$id'
+      path: '/notes/$id'
+      fullPath: '/notes/$id'
+      preLoaderRoute: typeof NotesIdRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/users': {
       id: '/api/users'
@@ -453,16 +434,6 @@ const PathlessLayoutRouteWithChildren = PathlessLayoutRoute._addFileChildren(
   PathlessLayoutRouteChildren,
 )
 
-interface NotesRouteChildren {
-  NotesNoteIdRoute: typeof NotesNoteIdRoute
-}
-
-const NotesRouteChildren: NotesRouteChildren = {
-  NotesNoteIdRoute: NotesNoteIdRoute,
-}
-
-const NotesRouteWithChildren = NotesRoute._addFileChildren(NotesRouteChildren)
-
 interface ApiUsersRouteChildren {
   ApiUsersIdRoute: typeof ApiUsersIdRoute
 }
@@ -481,10 +452,10 @@ const rootRouteChildren: RootRouteChildren = {
   UsersRouteRoute: UsersRouteRouteWithChildren,
   PathlessLayoutRoute: PathlessLayoutRouteWithChildren,
   DeferredRoute: DeferredRoute,
-  NoteRoute: NoteRoute,
-  NotesRoute: NotesRouteWithChildren,
+  NotesRoute: NotesRoute,
   RedirectRoute: RedirectRoute,
   ApiUsersRoute: ApiUsersRouteWithChildren,
+  NotesIdRoute: NotesIdRoute,
   PostsPostIdDeepRoute: PostsPostIdDeepRoute,
 }
 export const routeTree = rootRouteImport

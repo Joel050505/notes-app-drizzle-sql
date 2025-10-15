@@ -4,192 +4,186 @@ import {
   useMutation,
   useQueryClient,
 } from "@tanstack/react-query";
-import {
-  notesListQueryOptions,
-  addNote,
-  NewNoteType,
-  NoteType,
-} from "../utils/notes";
+import { notesListQueryOptions, addNote, deleteNote } from "../utils/notes";
+import { NewNoteInput, Note } from "types";
 import { useState } from "react";
 
 export const Route = createFileRoute("/notes")({
   loader: async ({ context }) => {
-    // Ensure data is prefetched before the component renders
     await context.queryClient.ensureQueryData(notesListQueryOptions());
-    return {};
   },
-  head: () => ({
-    meta: [{ title: "My Notes" }],
-  }),
-  component: NotesListComponent,
+  component: RouteComponent,
 });
 
-function NotesListComponent() {
+function RouteComponent() {
+  const queryClient = useQueryClient();
+  const { data: notes } = useSuspenseQuery(notesListQueryOptions());
+
   const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [body, setBody] = useState("");
 
-  // Use the prefetched data
-  const { data: notes } = useSuspenseQuery(notesListQueryOptions());
-  const queryClient = useQueryClient();
-
-  // Setup mutation
+  ///////////////////
+  //// Mutationer////
+  ///////////////////
   const mutation = useMutation({
-    mutationFn: (newNote: NewNoteType) => addNote({ data: newNote }),
-
-    // When mutate is called:
-    onMutate: async (newNote) => {
-      // Cancel any outgoing refetches
-      await queryClient.cancelQueries({ queryKey: ["notes"] });
-
-      // Snapshot the previous value
-      const previousNotes = queryClient.getQueryData<NoteType[]>(["notes"]);
-
-      // Optimistically update to the new value
-      if (previousNotes) {
-        queryClient.setQueryData<NoteType[]>(["notes"], (old) => [
-          ...(old || []),
-          {
-            id: Date.now(), // temporary id
-            title: newNote.title,
-            body: newNote.body,
-            favorite: false,
-          },
-        ]);
-      }
-
-      // Return a context object with the snapshot
-      return { previousNotes };
-    },
-
-    // If the mutation fails, use the context returned from onMutate to roll back
-    onError: (err, newNote, context) => {
-      if (context?.previousNotes) {
-        queryClient.setQueryData(["notes"], context.previousNotes);
-      }
-    },
-
-    // Always refetch after error or success:
-    onSettled: () => {
+    mutationFn: (newNote: NewNoteInput) => addNote({ data: newNote }),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] });
-      // Clear the form
       setTitle("");
+      setContent("");
       setBody("");
     },
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => deleteNote({ data: id }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notes"] });
+    },
+  });
+
+  // Vänta med submit tills titel finns och mutation är klar
+  const isPending = mutation.isPending;
+  const isFormValid = title.trim().length > 0;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title.trim()) return; // Prevent empty submissions
-
-    mutation.mutate({ title, body });
+    if (!isFormValid || isPending) return;
+    mutation.mutate({ title, content: body });
   };
 
-  const isFormValid = title.trim() !== "";
-  const isPending = mutation.isPending;
-
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">My Notes</h1>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <h1 className="text-4xl font-bold mb-8 text-gray-800 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600">
+          📝 Mina Anteckningar
+        </h1>
 
-      {/* Add Note Form */}
-      <div className="mb-8 bg-white shadow rounded-lg p-6">
-        <h2 className="text-xl font-semibold mb-4">Add New Note</h2>
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label
-              htmlFor="title"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Title *
-            </label>
-            <input
-              id="title"
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Note title"
-              disabled={isPending}
-              required
-            />
-          </div>
+        {/* Add Note Form */}
+        <div className="mb-8 bg-white shadow-xl rounded-2xl p-6 border border-gray-100">
+          <h2 className="text-2xl font-semibold mb-6 text-gray-700">
+            ✨ Skapa ny anteckning
+          </h2>
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label
+                htmlFor="title"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Title *
+              </label>
+              <input
+                id="title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all"
+                placeholder="T.ex. Min nya idé..."
+                disabled={isPending}
+                required
+              />
+            </div>
 
-          <div className="mb-4">
-            <label
-              htmlFor="body"
-              className="block text-sm font-medium text-gray-700 mb-1"
-            >
-              Content
-            </label>
-            <textarea
-              id="body"
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              rows={3}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
-              placeholder="Note content"
-              disabled={isPending}
-            />
-          </div>
+            <div className="mb-4">
+              <label
+                htmlFor="body"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                Content
+              </label>
+              <textarea
+                id="body"
+                value={body}
+                onChange={(e) => setBody(e.target.value)}
+                rows={4}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all resize-none"
+                placeholder="Skriv ditt innehåll här..."
+                disabled={isPending}
+              />
+            </div>
 
-          <button
-            type="submit"
-            disabled={!isFormValid || isPending}
-            className={`px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white 
+            <button
+              type="submit"
+              disabled={!isFormValid || isPending}
+              className={`px-6 py-3 border border-transparent rounded-lg shadow-md text-base font-semibold text-white transition-all transform hover:scale-105 
               ${
                 !isFormValid || isPending
                   ? "bg-gray-300 cursor-not-allowed"
-                  : "bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                  : "bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               }`}
-          >
-            {isPending ? "Adding..." : "Add Note"}
-          </button>
+            >
+              {isPending ? "⏳ Lägger till..." : "➕ Lägg till anteckning"}
+            </button>
 
-          {mutation.isError && (
-            <div className="mt-2 text-red-600">
-              Error adding note: {(mutation.error as Error).message}
+            {mutation.isError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700">
+                ❌ Fel vid tillägg: {(mutation.error as Error).message}
+              </div>
+            )}
+
+            {mutation.isSuccess && (
+              <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700">
+                ✅ Anteckning skapad!
+              </div>
+            )}
+          </form>
+        </div>
+
+        {/* Notes List */}
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold mb-4 text-gray-700">
+            📚 Alla anteckningar
+          </h2>
+          {notes.length === 0 ? (
+            <div className="text-center py-12 bg-white rounded-2xl shadow-md">
+              <p className="text-gray-400 text-lg">
+                📭 Inga anteckningar än. Skapa din första!
+              </p>
             </div>
+          ) : (
+            <ul className="space-y-4">
+              {notes.map((note) => (
+                <li
+                  key={note.id}
+                  className="bg-white border border-gray-200 rounded-xl p-5 shadow-md hover:shadow-xl transition-all transform hover:-translate-y-1"
+                >
+                  <div className="flex items-start justify-between mb-3">
+                    <h3 className="text-xl font-bold text-gray-800">
+                      {note.title}
+                    </h3>
+                  </div>
+                  {note.content && (
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
+                      {note.content}
+                    </p>
+                  )}
+                  <div className="flex gap-3">
+                    <Link
+                      to={`/notes_/${note.id}` as any}
+                      className="flex-1 text-center px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-600 transition-all transform hover:scale-105"
+                    >
+                      👁️ Visa detaljer
+                    </Link>
+                    <button
+                      onClick={() => {
+                        deleteMutation.mutate(note.id);
+                      }}
+                      className="px-4 py-2 bg-red-500 text-white rounded-lg font-medium hover:bg-red-600 transition-all transform hover:scale-105"
+                      disabled={deleteMutation.isPending}
+                    >
+                      {deleteMutation.isPending ? "⏳" : "🗑️"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
+        </div>
 
-          {mutation.isSuccess && (
-            <div className="mt-2 text-green-600">Note added successfully!</div>
-          )}
-        </form>
+        {/* Render child routes (note detail page) */}
+        <Outlet />
       </div>
-
-      {/* Notes List */}
-      {notes.length === 0 ? (
-        <p className="text-gray-500">No notes found. Create your first note!</p>
-      ) : (
-        <ul className="space-y-2">
-          {notes.map((note) => (
-            <li key={note.id}>
-              <Link
-                to="/notes/$noteId"
-                params={{ noteId: String(note.id) }}
-                className="block border rounded p-4 hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center justify-between">
-                  <span className="font-medium text-gray-900">
-                    {note.title}
-                  </span>
-                  {note.favorite && <span className="text-yellow-500">★</span>}
-                </div>
-                {note.body && (
-                  <p className="text-gray-600 text-sm mt-1 line-clamp-2">
-                    {note.body}
-                  </p>
-                )}
-              </Link>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <hr />
-
-      {/* Render child routes (note detail page) */}
-      <Outlet />
     </div>
   );
 }
